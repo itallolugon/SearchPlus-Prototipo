@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search+ | Busca Inteligente</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="logo">Search+</div>
+            <div class="tagline">Busca semântica com reconhecimento visual</div>
+        </div>
+
+        <!-- BUSCA -->
+        <div class="search-container">
+            <input 
+                type="text" 
+                class="search-box" 
+                id="searchInput" 
+                placeholder="Digite para buscar... (Ctrl+K)"
+                autocomplete="off"
+            >
+            <span class="search-icon">🔍</span>
+        </div>
+
+        <!-- HISTÓRICO DE BUSCAS -->
+        <div class="search-history" id="searchHistory">
+            <div class="history-header">
+                <span class="history-title">Buscas Recentes</span>
+                <button class="clear-history" id="clearHistory">Limpar</button>
+            </div>
+            <div class="history-items" id="historyItems"></div>
+        </div>
+
+        <!-- SUGESTÕES -->
+        <div class="suggestions" id="suggestions">
+            <div class="suggestions-header">Sugestões populares</div>
+            <div class="suggestion-item" data-query="pessoa de camiseta vermelha">
+                <span>👤</span>
+                <span class="suggestion-text">pessoa de camiseta vermelha</span>
+                <span class="suggestion-type">Imagem</span>
+            </div>
+            <div class="suggestion-item" data-query="boleto 2023">
+                <span>📄</span>
+                <span class="suggestion-text">boleto 2023</span>
+                <span class="suggestion-type">Financeiro</span>
+            </div>
+            <div class="suggestion-item" data-query="nota fiscal dezembro">
+                <span>🧾</span>
+                <span class="suggestion-text">nota fiscal dezembro</span>
+                <span class="suggestion-type">Fiscal</span>
+            </div>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="filters">
+            <button class="filter-btn active" data-filter="todos">Todos</button>
+            <button class="filter-btn" data-filter="imagens">🖼️ Imagens</button>
+            <button class="filter-btn" data-filter="documentos">📄 Documentos</button>
+            <button class="filter-btn" data-filter="boletos">📑 Boletos</button>
+            <button class="filter-btn" data-filter="notas">🧾 Notas Fiscais</button>
+        </div>
+
+        <!-- ESTATÍSTICAS E EXPORTAR -->
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stats-left">
+                <span id="resultCount">0</span> resultados encontrados
+            </div>
+            <div class="stats-right">
+                <button class="export-btn" id="exportBtn">
+                    <span>📥</span>
+                    <span>Exportar CSV</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- RESULTADOS -->
+        <div class="results" id="results">
+            <div class="empty-state">
+                <div class="empty-icon">🔎</div>
+                <h3>Digite para iniciar</h3>
+                <p>Exemplo: "pessoa de camiseta vermelha" ou "boleto 2023"</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE PREVIEW -->
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-content">
+            <button class="preview-close" id="previewClose">×</button>
+            <img id="previewImage" src="" alt="">
+            <div class="preview-info">
+                <div class="preview-title" id="previewTitle"></div>
+                <div class="preview-path" id="previewPath"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DICA DE ATALHOS -->
+    <div class="keyboard-hint">
+        Use <kbd>Ctrl</kbd>+<kbd>K</kbd> para buscar • <kbd>ESC</kbd> para limpar • <kbd>↑↓</kbd> para navegar
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const searchInput = document.getElementById('searchInput');
+            const suggestions = document.getElementById('suggestions');
+            const searchHistory = document.getElementById('searchHistory');
+            const historyItems = document.getElementById('historyItems');
+            const clearHistory = document.getElementById('clearHistory');
+            const results = document.getElementById('results');
+            const stats = document.getElementById('stats');
+            const resultCount = document.getElementById('resultCount');
+            const exportBtn = document.getElementById('exportBtn');
+            const previewModal = document.getElementById('previewModal');
+            const previewImage = document.getElementById('previewImage');
+            const previewTitle = document.getElementById('previewTitle');
+            const previewPath = document.getElementById('previewPath');
+            const previewClose = document.getElementById('previewClose');
+
+            let currentFilter = 'todos';
+            let debounceTimer = null;
+            let currentResults = [];
+            let selectedSuggestionIndex = -1;
+
+            // BASE DE DADOS
+            const database = [
+                {
+                    id: 1,
+                    type: 'imagens',
+                    icon: '🎉',
+                    title: 'Festa Confraternização 2024',
+                    path: 'Fotos > Eventos > 2024 > Dezembro',
+                    description: 'Celebração de fim de ano com toda equipe. Momento de integração e comemoração das conquistas do ano.',
+                    preview: 'images/equipe-2024.png',
+                    aiDetection: 'Detectado: 5 pessoas com camiseta vermelha',
+                    tags: ['2024', 'Festa', 'Equipe', 'Dezembro'],
+                    year: 2024,
+                    month: 12,
+                    keywords: ['pessoa', 'pessoas', 'camiseta', 'vermelha', 'vermelho', 'roupa', 'festa', 'evento', 'time', 'equipe'],
+                    baseRelevance: 95
+                },
+                {
+                    id: 2,
+                    type: 'imagens',
+                    icon: '🐕',
+                    title: 'Cachorro Golden Retriever',
+                    path: 'Fotos > Animais > 2024',
+                    description: 'Cachorro golden retriever',
+                    preview: 'images/cachorro.png',
+                    aiDetection: 'Detectado: 1 cachorro',
+                    tags: ['2024', 'Animal', 'Cachorro', 'Pet'],
+                    year: 2024,
+                    month: 5,
+                    keywords: ['cachorro', 'dog', 'pet', 'animal', 'golden'],
+                    baseRelevance: 93
+                },
+                {
+                    id: 3,
+                    type: 'imagens',
+                    icon: '🎪',
+                    title: 'Workshop Anual com Estandes 2024',
+                    path: 'Fotos > Eventos > 2024 > Março',
+                    description: 'Grande workshop com diversos estandes de empresas e expositores. Evento contou com apresentações, demonstrações e networking.',
+                    preview: 'images/workshop-2024.png',
+                    aiDetection: 'Detectado: Estande Workshop',
+                    tags: ['2024', 'Workshop', 'Estandes', 'Evento', 'Março'],
+                    year: 2024,
+                    month: 3,
+                    keywords: ['workshop', 'estande', 'estandes', 'feira', 'evento', 'expositor', 'pessoa', 'pessoas'],
+                    baseRelevance: 92
+                },
+                {
+                    id: 4,
+                    type: 'boletos',
+                    icon: '📑',
+                    title: 'Boleto Fornecedor ABC - Janeiro 2023',
+                    path: 'Financeiro > Boletos > 2023 > Janeiro',
+                    description: 'Boleto bancário - Fornecedor ABC Ltda. Vencimento: 15/01/2023. Valor: R$ 3.450,00.',
+                    tags: ['2023', 'Janeiro', 'Fornecedor', 'Pago'],
+                    year: 2023,
+                    month: 1,
+                    keywords: ['boleto', 'boletos', 'pagamento', 'financeiro', 'fornecedor', '2023', 'janeiro'],
+                    baseRelevance: 98
+                },
+                {
+                    id: 5,
+                    type: 'boletos',
+                    icon: '📑',
+                    title: 'Boleto Aluguel - Dezembro 2023',
+                    path: 'Financeiro > Boletos > 2023 > Dezembro',
+                    description: 'Boleto de aluguel comercial. Valor: R$ 8.500,00.',
+                    tags: ['2023', 'Dezembro', 'Aluguel', 'Pago'],
+                    year: 2023,
+                    month: 12,
+                    keywords: ['boleto', 'boletos', 'aluguel', 'pagamento', '2023', 'dezembro'],
+                    baseRelevance: 97
+                },
+                {
+                    id: 6,
+                    type: 'boletos',
+                    icon: '📑',
+                    title: 'Boleto Energia Elétrica - Fevereiro 2024',
+                    path: 'Financeiro > Boletos > 2024 > Fevereiro',
+                    description: 'Conta de energia elétrica. Valor: R$ 1.890,50.',
+                    tags: ['2024', 'Fevereiro', 'Energia'],
+                    year: 2024,
+                    month: 2,
+                    keywords: ['boleto', 'boletos', 'energia', 'conta', '2024', 'fevereiro'],
+                    baseRelevance: 96
+                },
+                {
+                    id: 7,
+                    type: 'notas',
+                    icon: '🧾',
+                    title: 'NF-e 12345 - Equipamentos Dezembro 2023',
+                    path: 'Fiscal > Notas Fiscais > 2023 > Dezembro',
+                    description: 'Nota fiscal de compra de equipamentos. Valor: R$ 15.670,00.',
+                    tags: ['2023', 'Dezembro', 'Equipamentos'],
+                    year: 2023,
+                    month: 12,
+                    keywords: ['nota', 'fiscal', 'nf', 'nfe', 'equipamento', 'compra', '2023', 'dezembro'],
+                    baseRelevance: 95
+                },
+                {
+                    id: 8,
+                    type: 'documentos',
+                    icon: '📊',
+                    title: 'Relatório Vendas 2023.pdf',
+                    path: 'Documentos > Relatórios > 2023',
+                    description: 'Relatório anual de vendas 2023.',
+                    tags: ['2023', 'Vendas', 'PDF'],
+                    year: 2023,
+                    keywords: ['relatório', 'relatorio', 'vendas', 'pdf', '2023', 'anual'],
+                    baseRelevance: 96
+                }
+            ];
+
+            // FUNÇÕES DE NORMALIZAÇÃO
+            function normalizeText(text) {
+                if (!text) return '';
+                return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+
+            function extractYear(query) {
+                const match = query.match(/\b(20\d{2})\b/);
+                return match ? parseInt(match[1]) : null;
+            }
+
+            function detectSearchType(queryNorm) {
+                const typeMap = {
+                    'boleto': 'boletos', 'boletos': 'boletos',
+                    'nota': 'notas', 'fiscal': 'notas', 'nf': 'notas',
+                    'relatório': 'documentos', 'relatorio': 'documentos', 'pdf': 'documentos',
+                    'pessoa': 'imagens', 'pessoas': 'imagens', 'camiseta': 'imagens', 'foto': 'imagens'
+                };
+                for (const [term, type] of Object.entries(typeMap)) {
+                    if (queryNorm.includes(term)) return type;
+                }
+                return null;
+            }
+
+            // ALGORITMO DE RELEVÂNCIA
+            function calculateRelevance(item, queryTerms, queryNorm, year, detectedType) {
+                let score = 0;
+                if (detectedType && item.type !== detectedType) return 0;
+
+                const itemKeywords = item.keywords.map(k => normalizeText(k));
+                const itemTitle = normalizeText(item.title);
+                const itemDesc = normalizeText(item.description);
+
+                let matches = 0;
+                queryTerms.forEach(term => {
+                    if (itemTitle.includes(term)) { score += 25; matches++; }
+                    if (itemKeywords.some(k => k === term || k.includes(term))) { score += 20; matches++; }
+                    if (itemDesc.includes(term)) { score += 10; matches++; }
+                });
+
+                if (matches === 0) return 0;
+                if (year && item.year !== year) return 0;
+                if (year && item.year === year) score += 30;
+
+                return Math.min(Math.round(score), 100);
+            }
+
+            // BUSCA PRINCIPAL
+            function performSearch(query) {
+                if (!query || query.length < 2) {
+                    showEmptyState();
+                    return;
+                }
+
+                saveToHistory(query);
+
+                const queryNorm = normalizeText(query);
+                const queryTerms = queryNorm.split(/\s+/).filter(t => t.length > 2);
+                const year = extractYear(query);
+                const detectedType = detectSearchType(queryNorm);
+
+                let filtered = currentFilter === 'todos' ? [...database] : database.filter(i => i.type === currentFilter);
+                if (detectedType && currentFilter === 'todos') {
+                    filtered = filtered.filter(i => i.type === detectedType);
+                }
+
+                const scored = filtered
+                    .map(item => ({ ...item, relevance: calculateRelevance(item, queryTerms, queryNorm, year, detectedType) }))
+                    .filter(item => item.relevance > 0)
+                    .sort((a, b) => b.relevance - a.relevance);
+
+                currentResults = scored;
+                displayResults(scored);
+            }
+
+            // EXIBIR RESULTADOS
+            function displayResults(items) {
+                if (items.length === 0) {
+                    showNoResults();
+                    return;
+                }
+
+                stats.style.display = 'flex';
+                resultCount.textContent = items.length;
+
+                results.innerHTML = items.map((item, i) => `
+                    <div class="result-card" style="animation-delay: ${i * 0.05}s">
+                        <div class="result-header">
+                            <div class="result-icon">${item.icon}</div>
+                            <div class="result-info">
+                                <div class="result-title">${item.title}</div>
+                                <div class="result-path">${item.path}</div>
+                            </div>
+                        </div>
+                        ${item.preview ? `
+                            <div class="result-preview" onclick="showPreview('${item.preview}', '${item.title}', '${item.path}')">
+                                <img src="${item.preview}" alt="${item.title}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                            </div>
+                        ` : ''}
+                        <div class="result-content">
+                            <div class="result-description">${item.description}</div>
+                            ${item.aiDetection ? `
+                                <div class="ai-detection">
+                                    <span>🤖</span>
+                                    <span class="ai-detection-text">${item.aiDetection}</span>
+                                </div>
+                            ` : ''}
+                            <div class="result-footer">
+                                <span class="relevance-badge">
+                                    <span>⭐</span>
+                                    <span>${item.relevance}%</span>
+                                </span>
+                                ${item.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function showEmptyState() {
+                stats.style.display = 'none';
+                currentResults = [];
+                results.innerHTML = '<div class="empty-state"><div class="empty-icon">🔎</div><h3>Digite para iniciar</h3><p>Exemplo: "pessoa de camiseta vermelha" ou "boleto 2023"</p></div>';
+            }
+
+            function showNoResults() {
+                stats.style.display = 'none';
+                currentResults = [];
+                results.innerHTML = '<div class="empty-state"><div class="empty-icon">😔</div><h3>Nenhum resultado encontrado</h3><p>Tente outros termos</p></div>';
+            }
+
+            // HISTÓRICO
+            function saveToHistory(query) {
+                let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+                history = history.filter(item => item !== query);
+                history.unshift(query);
+                history = history.slice(0, 10);
+                localStorage.setItem('searchHistory', JSON.stringify(history));
+                renderHistory();
+            }
+
+            function renderHistory() {
+                const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+                if (history.length === 0) {
+                    searchHistory.classList.remove('active');
+                    return;
+                }
+                searchHistory.classList.add('active');
+                historyItems.innerHTML = history.map(item => `
+                    <div class="history-item" onclick="searchInput.value='${item}'; performSearch('${item}')">
+                        <span>🕐</span><span>${item}</span>
+                    </div>
+                `).join('');
+            }
+
+            // PREVIEW
+            window.showPreview = function(src, title, path) {
+                previewImage.src = src;
+                previewTitle.textContent = title;
+                previewPath.textContent = path;
+                previewModal.classList.add('active');
+            };
+
+            // EXPORTAR CSV
+            exportBtn.addEventListener('click', function() {
+                if (currentResults.length === 0) return;
+                let csv = 'Título,Caminho,Tipo,Ano,Relevância\n';
+                currentResults.forEach(item => {
+                    csv += `"${item.title}","${item.path}","${item.type}","${item.year || 'N/A'}","${item.relevance}%"\n`;
+                });
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `search-plus-resultados-${Date.now()}.csv`;
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                exportBtn.innerHTML = '<span>✓</span><span>Exportado!</span>';
+                setTimeout(() => {
+                    exportBtn.innerHTML = '<span>📥</span><span>Exportar CSV</span>';
+                }, 2000);
+            });
+
+            // EVENT LISTENERS
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                clearTimeout(debounceTimer);
+                if (query.length > 0) {
+                    suggestions.classList.add('active');
+                    selectedSuggestionIndex = -1;
+                    debounceTimer = setTimeout(() => performSearch(query), 300);
+                } else {
+                    suggestions.classList.remove('active');
+                    showEmptyState();
+                }
+            });
+
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    clearTimeout(debounceTimer);
+                    suggestions.classList.remove('active');
+                    performSearch(this.value.trim());
+                }
+            });
+
+            suggestions.addEventListener('click', function(e) {
+                const item = e.target.closest('.suggestion-item');
+                if (item) {
+                    const query = item.getAttribute('data-query');
+                    searchInput.value = query;
+                    suggestions.classList.remove('active');
+                    performSearch(query);
+                }
+            });
+
+            document.querySelector('.filters').addEventListener('click', function(e) {
+                const btn = e.target.closest('.filter-btn');
+                if (!btn) return;
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.getAttribute('data-filter');
+                const query = searchInput.value.trim();
+                if (query) performSearch(query);
+            });
+
+            clearHistory.addEventListener('click', function() {
+                localStorage.removeItem('searchHistory');
+                renderHistory();
+            });
+
+            previewClose.addEventListener('click', () => previewModal.classList.remove('active'));
+            previewModal.addEventListener('click', (e) => {
+                if (e.target === previewModal) previewModal.classList.remove('active');
+            });
+
+            // ATALHOS DE TECLADO
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                }
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    searchInput.blur();
+                    suggestions.classList.remove('active');
+                    showEmptyState();
+                    if (previewModal.classList.contains('active')) {
+                        previewModal.classList.remove('active');
+                    }
+                }
+
+                const suggestionItems = document.querySelectorAll('.suggestion-item');
+                if (suggestions.classList.contains('active') && suggestionItems.length > 0) {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestionItems.length;
+                        updateSelectedSuggestion(suggestionItems);
+                    }
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        selectedSuggestionIndex = selectedSuggestionIndex <= 0 ? suggestionItems.length - 1 : selectedSuggestionIndex - 1;
+                        updateSelectedSuggestion(suggestionItems);
+                    }
+                    if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
+                        e.preventDefault();
+                        const query = suggestionItems[selectedSuggestionIndex].getAttribute('data-query');
+                        searchInput.value = query;
+                        suggestions.classList.remove('active');
+                        performSearch(query);
+                    }
+                }
+            });
+
+            function updateSelectedSuggestion(items) {
+                items.forEach((item, index) => {
+                    if (index === selectedSuggestionIndex) {
+                        item.classList.add('selected');
+                        item.scrollIntoView({ block: 'nearest' });
+                    } else {
+                        item.classList.remove('selected');
+                    }
+                });
+            }
+
+            renderHistory();
+        });
+    </script>
+</body>
+</html>

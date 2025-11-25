@@ -1,0 +1,662 @@
+/* ==========================================
+   SEARCH+ - SISTEMA DE BUSCA INTELIGENTE
+   CSS Versão Final - Sem Imagens Similares
+   ========================================== */
+
+/* ==========================================
+   RESET E CONFIGURAÇÕES GLOBAIS
+   ========================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #0f0f0f; /* Fundo escuro */
+    color: #ffffff;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ==========================================
+   HEADER E LOGO
+   ========================================== */
+.header {
+    padding: 40px 0 30px;
+    text-align: center;
+}
+
+.logo {
+    font-size: 52px;
+    font-weight: 800;
+    /* Gradiente nas cores oficiais do Search+ */
+    background: linear-gradient(135deg, #FF0054 0%, #6B2CFF 50%, #1E90FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+}
+
+.tagline {
+    color: #C8A2FF;
+    font-size: 16px;
+    font-weight: 400;
+    margin-top: 10px;
+    opacity: 0.9;
+}
+
+/* ==========================================
+   BARRA DE BUSCA
+   ========================================== */
+.search-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+/* Input principal de busca */
+.search-box {
+    width: 100%;
+    padding: 18px 60px 18px 24px;
+    font-size: 16px;
+    background: #1a1a1a;
+    border: 2px solid #2a2a2a;
+    border-radius: 50px;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    font-weight: 400;
+}
+
+/* Estado de foco da busca */
+.search-box:focus {
+    outline: none;
+    border-color: #FF0054;
+    background: #1f1f1f;
+    box-shadow: 0 0 0 3px rgba(255, 0, 84, 0.1);
+}
+
+.search-box::placeholder {
+    color: #666;
+}
+
+/* Ícone de lupa à direita */
+.search-icon {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    cursor: pointer;
+}
+
+/* ==========================================
+   HISTÓRICO DE BUSCAS
+   ========================================== */
+.search-history {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 1px solid #2a2a2a;
+    display: none; /* Oculto por padrão */
+}
+
+.search-history.active {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.history-title {
+    font-size: 12px;
+    color: #888;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Botão para limpar histórico */
+.clear-history {
+    font-size: 12px;
+    color: #FF0054;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.clear-history:hover {
+    background: rgba(255, 0, 84, 0.1);
+}
+
+.history-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Item individual de histórico */
+.history-item {
+    padding: 8px 14px;
+    background: #252525;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #aaa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.history-item:hover {
+    background: rgba(255, 0, 84, 0.1);
+    color: #fff;
+}
+
+/* ==========================================
+   SUGESTÕES DE BUSCA
+   ========================================== */
+.suggestions {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #2a2a2a;
+    display: none;
+}
+
+.suggestions.active {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+.suggestions-header {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.suggestion-item {
+    padding: 12px 16px;
+    margin: 4px 0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Hover e seleção com setas do teclado */
+.suggestion-item:hover,
+.suggestion-item.selected {
+    background: rgba(255, 0, 84, 0.1);
+    transform: translateX(4px);
+}
+
+.suggestion-text {
+    flex: 1;
+    font-size: 14px;
+    color: #fff;
+}
+
+.suggestion-type {
+    font-size: 11px;
+    color: #888;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+/* ==========================================
+   FILTROS DE TIPO
+   ========================================== */
+.filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+    padding: 0 4px;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: 1.5px solid #2a2a2a;
+    background: #1a1a1a;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.filter-btn:hover {
+    border-color: #FF0054;
+    background: rgba(255, 0, 84, 0.05);
+    transform: translateY(-2px);
+}
+
+/* Filtro ativo */
+.filter-btn.active {
+    background: linear-gradient(135deg, #FF0054, #6B2CFF);
+    border-color: transparent;
+    box-shadow: 0 4px 15px rgba(255, 0, 84, 0.3);
+}
+
+/* ==========================================
+   ESTATÍSTICAS E EXPORTAR
+   ========================================== */
+.stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid #2a2a2a;
+}
+
+.stats-left {
+    font-size: 13px;
+    color: #888;
+}
+
+.stats-highlight {
+    color: #FF0054;
+    font-weight: 600;
+}
+
+/* Botão de exportar CSV */
+.export-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #6B2CFF, #1E90FF);
+    border: none;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(107, 44, 255, 0.4);
+}
+
+/* ==========================================
+   GRID DE RESULTADOS
+   ========================================== */
+.results {
+    display: grid;
+    gap: 20px;
+}
+
+/* ==========================================
+   CARD DE RESULTADO
+   ========================================== */
+.result-card {
+    background: #1a1a1a;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #2a2a2a;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.5s ease;
+}
+
+/* Hover no card */
+.result-card:hover {
+    transform: translateY(-4px);
+    border-color: #6B2CFF;
+    box-shadow: 0 8px 30px rgba(107, 44, 255, 0.2);
+}
+
+/* Cabeçalho do card */
+.result-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Ícone do tipo de arquivo */
+.result-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(135deg, #FF0054, #6B2CFF);
+    flex-shrink: 0;
+}
+
+.result-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.result-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.result-path {
+    font-size: 12px;
+    color: #888;
+}
+
+/* ==========================================
+   PREVIEW DE IMAGEM
+   ========================================== */
+.result-preview {
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+    position: relative;
+    background: #0f0f0f;
+    cursor: pointer;
+}
+
+.result-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+/* Zoom ao passar o mouse */
+.result-preview:hover img {
+    transform: scale(1.05);
+}
+
+/* ==========================================
+   MODAL DE PREVIEW FULLSCREEN
+   ========================================== */
+.preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.preview-modal.active {
+    display: flex;
+}
+
+.preview-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    position: relative;
+}
+
+.preview-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Botão de fechar modal */
+.preview-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: rgba(255, 0, 84, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preview-close:hover {
+    background: #FF0054;
+    transform: rotate(90deg);
+}
+
+/* Info da imagem no modal */
+.preview-info {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 16px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.preview-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.preview-path {
+    font-size: 12px;
+    color: #888;
+}
+
+/* ==========================================
+   CONTEÚDO DO RESULTADO
+   ========================================== */
+.result-content {
+    padding: 20px;
+}
+
+.result-description {
+    color: #aaa;
+    line-height: 1.6;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* Detecção de IA */
+.ai-detection {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(30, 144, 255, 0.1);
+    border: 1px solid rgba(30, 144, 255, 0.3);
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.ai-detection-text {
+    font-size: 13px;
+    color: #1E90FF;
+    font-weight: 500;
+}
+
+/* ==========================================
+   TAGS E METADADOS
+   ========================================== */
+.result-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Badge de relevância */
+.relevance-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: rgba(255, 0, 84, 0.15);
+    border: 1px solid rgba(255, 0, 84, 0.3);
+    font-size: 12px;
+    font-weight: 600;
+    color: #FF0054;
+}
+
+/* Tags */
+.tag {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    background: rgba(107, 44, 255, 0.15);
+    color: #C8A2FF;
+    border: 1px solid rgba(107, 44, 255, 0.3);
+    font-weight: 500;
+}
+
+/* ==========================================
+   ESTADO VAZIO
+   ========================================== */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #666;
+}
+
+.empty-icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+.empty-state h3 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    color: #aaa;
+}
+
+.empty-state p {
+    font-size: 15px;
+    color: #666;
+}
+
+/* ==========================================
+   DICA DE ATALHOS DE TECLADO
+   ========================================== */
+.keyboard-hint {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(26, 26, 26, 0.95);
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #888;
+    backdrop-filter: blur(10px);
+}
+
+.keyboard-hint kbd {
+    background: #333;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #FF0054;
+    margin: 0 2px;
+}
+
+/* ==========================================
+   ANIMAÇÕES
+   ========================================== */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   RESPONSIVIDADE (MOBILE)
+   ========================================== */
+@media (max-width: 768px) {
+    .logo {
+        font-size: 40px;
+    }
+
+    .filters {
+        justify-content: center;
+    }
+
+    .stats {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .result-preview {
+        height: 200px;
+    }
+
+    .keyboard-hint {
+        display: none; /* Oculta em mobile */
+    }
+
+    .history-items {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-box {
+        padding: 16px 50px 16px 20px;
+        font-size: 15px;
+    }
+
+    .result-title {
+        font-size: 16px;
+    }
+}
